@@ -11,12 +11,26 @@ const app = express();
 
 // 1. Initialize Firebase Admin
 // Using JSON.parse as the service account is likely stored as a string in your .env
-const serviceAccount = JSON.parse(process.env);
+//1. Determine if serviceAccount needs parsing
+let serviceAccountData;
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+try {
+  // If it's a string, parse it. If it's already an object, use it directly.
+  serviceAccountData = typeof process.env.FIREBASE_SERVICE_ACCOUNT === 'string'
+    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+    : process.env.FIREBASE_SERVICE_ACCOUNT;
 
+  // 2. Initialize with the cleaned data
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccountData)
+  });
+  
+  console.log("✅ Firebase Admin successfully connected.");
+} catch (error) {
+  console.error("❌ Firebase Init Error:", error.message);
+  // It's better to stop the server than to run with a broken database connection
+  process.exit(1); 
+}
 const db = admin.firestore();
 
 // 2. Configure Nodemailer Transporter
